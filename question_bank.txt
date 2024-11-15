@@ -1,0 +1,10 @@
+What is the capital city of Japan?,Tokyo,Seoul,Beijing,Bangkok
+Who developed the theory of relativity?,Isaac Newton,Albert Einstein,Nikola Tesla,Galileo Galilei
+Which planet is known as the Red Planet?,Venus,Mars,Jupiter,Saturn
+What is the largest mammal in the world?,Elephant,Giraffe,Blue Whale,Shark
+Who painted the Mona Lisa?,Leonardo da Vinci,Pablo Picasso,Claude Monet,Michelangelo
+What is the chemical symbol for gold?,Au,Ag,Fe,Pt
+Which is the longest river in the world?,Amazon River,Nile River,Yangtze River,Mississippi River
+Which element is a diamond made of?,Carbon,Hydrogen,Helium,Oxygen
+Who wrote the play 'Romeo and Juliet'?,Charles Dickens,Mark Twain,Jane Austen,William Shakespeare
+Which country won the FIFA World Cup in 2018?,Brazil,France,Germany,Argentina
