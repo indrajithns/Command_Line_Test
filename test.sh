@@ -1,30 +1,51 @@
 #!/bin/bash
 
-#Name: Indrajith N S
-#Date: 25-October-2024
-#Description: The Mini Quiz Application
-
+# ====================================================================================
+# Description : Mini Quiz Application
+#
+# This script implements a command-line quiz application. It allows users to:
+# - Sign up with a username and password.
+# - Sign in to their account.
+# - Take a quiz with a time limit for each question.
+# - View test results showing their answers, correct answers, and their score.
+# - Log their activities, such as sign-in attempts and test completion.
+#
+# The application uses files to manage user accounts, passwords, questions, 
+# correct answers, and user responses. It includes features for secure password 
+# validation, data storage, and activity logging.
+#
+# File Structure:
+# - `users.csv`            : Stores registered usernames.
+# - `passwords.csv`        : Stores usernames and hashed passwords.
+# - `test_activity.log`    : Logs user activities (sign-ups, sign-ins, test completions, etc.).
+# - `question_bank.txt`    : Contains quiz questions with options in a CSV format.
+# - `correct_answers.txt`  : Stores correct answers for the questions.
+# - `TestData/`            : Directory for storing user response files.
+# ====================================================================================
 
 
 
 # File paths
+# Define constants for file paths used in the script, such as user data, passwords, logs, and test files.
 USER_FILE="users.csv"
 PASSWORD_FILE="passwords.csv"
 LOG_FILE="test_activity.log"
 QUESTION_BANK="question_bank.txt"
 CORRECT_ANSWERS="correct_answers.txt"
-PROJECT_DIR="TestData"
-ANSWER_FILE=""
-username=""
-score=0
-total_questions=10
+PROJECT_DIR="TestData" # Directory to store test-related data
+ANSWER_FILE=""         # File to store user answers for the current test session
+username=""            # Holds the current user's username
+score=0                # Tracks the user's score during the test
+total_questions=10     # Maximum number of questions in a test
 
-# Function to log activity with timestamp
+# Function to log activity with a timestamp
+# Logs user actions like sign-ups, sign-ins, and test completions.
 log_activity() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
 }
 
-# Function to create answer CSV file and backup if it exists
+# Function to create a file to store user answers during the test
+# If a previous answer file exists, it creates a backup.
 create_answer_file() {
     mkdir -p "$PROJECT_DIR"
     # Get the current date and time in the format YYYYMMDD_HHMMSS
@@ -36,32 +57,38 @@ create_answer_file() {
     touch "$ANSWER_FILE"
 }
 
-# User sign-up
+# Function to handle user sign-up
+# Ensures the username is alphanumeric and passwords meet complexity requirements.
 sign_up() {
     echo "Sign-Up"
     read -p "Enter a UserName (Alphanumeric Only): " username
 
+    # Check if the username contains only alphanumeric characters
     if [[ ! "$username" =~ ^[a-zA-Z0-9]+$ ]]; then
-        echo "Invalid UserName! Only Alphanumeric Aharacters Are Allowed."
+        echo "Invalid UserName! Only Alphanumeric Characters Are Allowed."
         log_activity "Failed Sign-Up Attempt With Invalid UserName"
         return
     fi
 
+    # Verify if the username already exists in the user file
     if grep -q "$username" "$USER_FILE"; then
         echo "UserName Already Exists !!! Please Choose a Different UserName."
         log_activity "Failed Sign-Up Attempt, UserName Already Exists"
         return
     fi
 
+    # Prompt for password and check complexity
     read -s -p "Enter a Password (min 8 characters, at least one number and symbol): " password
     echo
 
+    # Validate password requirements
     if [[ ${#password} -lt 8 || ! "$password" =~ [0-9] || ! "$password" =~ [^a-zA-Z0-9] ]]; then
         echo "Password Must Be At Least 8 Characters Long With At Least One Number And One Symbol."
         log_activity "Failed Sign-Up Attempt With Weak Password"
         return
     fi
 
+    # Confirm password and check for a match
     read -s -p "Re-Enter Password: " password_confirm
     echo
 
@@ -71,28 +98,32 @@ sign_up() {
         return
     fi
 
+    # Save the username and password
     echo "$username" >> "$USER_FILE"
     echo "$username,$password" >> "$PASSWORD_FILE"
     log_activity "New User $username Signed Up Successfully"
     echo "Sign-Up Successful!"
 }
 
-# User sign-in
+# Function to handle user sign-in
+# Verifies the username exists and matches the password.
 sign_in() {
     echo "Sign-In"
     read -p "Enter Your UserName: " username
     username=$(echo "$username" | xargs)  # Trim spaces from username
 
+    # Check if the username exists in the user file
     if ! grep -q "^$username$" "$USER_FILE"; then
         echo "UserName Does Not Exist !!! Please Sign-Up First."
         log_activity "Failed Sign-In Attempt, UserName Not Found"
         return 1
     fi
 
+    # Prompt for the password
     read -s -p "Enter Your Password: " password
     echo
 
-    # Check if the username and password combination exists
+    # Verify username and password combination
     if ! grep -q "^$username,$password$" "$PASSWORD_FILE"; then
         echo "Incorrect Password!"
         log_activity "Failed Sign-In Attempt With Incorrect Password"
@@ -104,11 +135,13 @@ sign_in() {
     return 0
 }
 
-# Function to display and take the test
+# Function to take the test
+# Displays questions, records answers, and evaluates results.
 take_test() {
     create_answer_file
     score=0
 
+    # Validate existence of required files
     if [ ! -f "$QUESTION_BANK" ]; then
         echo "Error: Question Bank File Not Found!"
         log_activity "Test Aborted, Question Bank File Missing"
@@ -123,9 +156,10 @@ take_test() {
 
     echo "Starting The Test. You Will Answer Each Question One By One."
 
-    mapfile -t questions < "$QUESTION_BANK"
-    mapfile -t answers < "$CORRECT_ANSWERS"
+    mapfile -t questions < "$QUESTION_BANK" # Read questions into an array
+    mapfile -t answers < "$CORRECT_ANSWERS" # Read correct answers into an array
 
+    # Iterate over questions
     for question_count in $(seq 0 $((total_questions - 1))); do
         if [ $question_count -ge ${#questions[@]} ]; then
             break
@@ -139,7 +173,7 @@ take_test() {
         echo "c) $option3"
         echo "d) $option4"
 
-        timer=10
+        timer=10 # Initialize a 10-second countdown for each question
         countdown() {
             while [ $timer -gt 0 ]; do
                 echo -n -e "\rYou Have $timer Seconds To Answer. Select An Option (a - d): \c"
@@ -147,18 +181,18 @@ take_test() {
                 ((timer--))
             done
 
-            answer="Invalid"
+            answer="Invalid" # Default answer if the user doesn't respond in time
             echo "$question,$answer,Invalid,Invalid" >> "$ANSWER_FILE"
         }
         
-        countdown &  
+        countdown & # Start the countdown in the background
         timer_pid=$!
 
-        read -t 10 answer
-        kill $timer_pid 2>/dev/null
+        read -t 10 answer # Wait for user input for 10 seconds
+        kill $timer_pid 2>/dev/null # Terminate countdown if input is provided
         wait $timer_pid 2>/dev/null
 
-        echo -ne "\r                                                        \n"
+        echo -ne "\r                                                        \n" # Clear countdown prompt
 
         if [[ -z "$answer" ]]; then
             echo "You Did Not Answer In Time. Moving To The Next Question..."
@@ -188,6 +222,7 @@ take_test() {
 }
 
 # View test results
+# Displays a summary of the user's answers, correct answers, and the result.
 view_test() {
     if [ ! -f "$CORRECT_ANSWERS" ]; then
         echo "Error: Correct Answers File Not Found !!!"
@@ -233,6 +268,7 @@ view_test() {
 }
 
 # Main menu
+# Provides options for user sign-in, sign-up, or exiting the application.
 main_menu() {
     while true; do
         echo "Welcome To The Quiz Application"
@@ -264,6 +300,7 @@ main_menu() {
 }
 
 # Test menu
+# Provides options for taking the test, viewing results, or logging out.
 test_menu() {
     while true; do
         echo "1. Take Test"
@@ -292,4 +329,5 @@ test_menu() {
 
 # Run the main menu
 main_menu
+
 
